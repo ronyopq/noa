@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOA Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style> *{ font-family:'Hind Siliguri',system-ui,sans-serif } .tab-btn{border-bottom-width:3px} .tab-btn.active{border-color:#f97316; color:#1f2937} </style>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-extrabold">🛠️ NOA Admin Panel</h1>
+      <div class="flex items-center gap-2">
+        <input type="password" id="adminToken" placeholder="ADMIN TOKEN" class="px-3 py-2 rounded border" />
+        <button id="saveToken" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded">🔐 Login</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4 mb-4">
+      <label class="block text-sm text-gray-600">Sheets Web App URL</label>
+      <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/XXXX/exec" class="w-full px-3 py-2 rounded border" />
+      <div class="mt-2 text-xs text-gray-500">এখানেই সব রিকোয়েস্ট যাবে।</div>
+    </div>
+
+    <div class="flex gap-3 border-b pb-2 mb-4">
+      <button class="tab-btn pb-2 px-3 border-b-2" data-tab="settings">সেটিংস</button>
+      <button class="tab-btn pb-2 px-3 border-b-2" data-tab="categories">ক্যাটাগরি</button>
+      <button class="tab-btn pb-2 px-3 border-b-2" data-tab="items">আইটেম</button>
+      <button class="tab-btn pb-2 px-3 border-b-2" data-tab="orders">অর্ডার</button>
+      <button class="tab-btn pb-2 px-3 border-b-2" data-tab="dashboard">ড্যাশবোর্ড</button>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <section id="tab-settings" class="hidden">
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="font-bold mb-3">🏪 প্রতিষ্ঠান সেটিংস</h2>
+          <div class="space-y-3">
+            <input id="cfg_name" class="w-full border px-3 py-2 rounded" placeholder="প্রতিষ্ঠানের নাম" />
+            <input id="cfg_motto" class="w-full border px-3 py-2 rounded" placeholder="মোটো" />
+            <input id="cfg_logo" class="w-full border px-3 py-2 rounded" placeholder="লোগো URL" />
+            <input id="cfg_address" class="w-full border px-3 py-2 rounded" placeholder="ঠিকানা" />
+            <div class="grid grid-cols-3 gap-2">
+              <input id="cfg_currency" class="border px-3 py-2 rounded" placeholder="মুদ্রা (৳)" />
+              <input id="cfg_delivery" type="number" class="border px-3 py-2 rounded" placeholder="ডেলিভারি (৫০)" />
+              <input id="cfg_phone" class="border px-3 py-2 rounded" placeholder="WhatsApp নম্বর (+880...)" />
+            </div>
+            <button id="btnSaveConfig" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">💾 সেভ</button>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-4">
+          <h2 class="font-bold mb-3">🔗 শেয়ার প্রিভিউ কন্ট্রোল</h2>
+          <p class="text-sm text-gray-600 mb-2">GitHub Pages-এ OG/Twitter মেটা ট্যাগ **স্ট্যাটিক** থাকে। নিচের ফিল্ডগুলো সেভ করলে শিটে থাকবে এবং একটি *কপি মেটা ট্যাগ* বাটন দেওয়া হলো—এগুলো কপি করে `index.html`-এর `<head>`-এ পেস্ট করুন।</p>
+          <input id="cfg_og_title" class="w-full border px-3 py-2 rounded mb-2" placeholder="OG Title" />
+          <input id="cfg_og_desc" class="w-full border px-3 py-2 rounded mb-2" placeholder="OG Description" />
+          <input id="cfg_og_image" class="w-full border px-3 py-2 rounded mb-2" placeholder="OG Image URL (1200x630)" />
+          <button id="btnSaveOG" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">💾 OG সেভ</button>
+          <button id="btnCopyMeta" class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded ml-2">📋 মেটা ট্যাগ কপি</button>
+          <pre id="metaSnippet" class="mt-3 text-xs bg-gray-100 p-3 rounded overflow-auto"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORIES TAB -->
+    <section id="tab-categories" class="hidden">
+      <div class="bg-white rounded-xl shadow p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold">📚 ক্যাটাগরি</h2>
+          <button id="btnAddCat" class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded">➕ নতুন ক্যাটাগরি</button>
+        </div>
+        <table class="w-full text-left text-sm">
+          <thead><tr class="text-gray-600"><th class="p-2">#</th><th class="p-2">নাম (BN)</th><th class="p-2">নাম (EN)</th><th class="p-2">অর্ডার</th><th class="p-2">একটিভ?</th><th class="p-2">অ্যাকশন</th></tr></thead>
+          <tbody id="catTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ITEMS TAB -->
+    <section id="tab-items" class="hidden">
+      <div class="bg-white rounded-xl shadow p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold">🍽️ আইটেম</h2>
+          <button id="btnAddItem" class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded">➕ নতুন আইটেম</button>
+        </div>
+        <table class="w-full text-left text-sm">
+          <thead><tr class="text-gray-600"><th class="p-2">ক্যাটাগরি</th><th class="p-2">নাম (BN)</th><th class="p-2">নাম (EN)</th><th class="p-2">দাম</th><th class="p-2">অর্ডার</th><th class="p-2">স্পেশাল</th><th class="p-2">একটিভ</th><th class="p-2">অ্যাকশন</th></tr></thead>
+          <tbody id="itemTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ORDERS TAB -->
+    <section id="tab-orders" class="hidden">
+      <div class="bg-white rounded-xl shadow p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <input type="date" id="ordFrom" class="border px-3 py-2 rounded" />
+          <input type="date" id="ordTo" class="border px-3 py-2 rounded" />
+          <button id="btnLoadOrders" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">🔄 লোড</button>
+        </div>
+        <div class="overflow-auto">
+          <table class="min-w-[900px] w-full text-left text-sm">
+            <thead><tr class="text-gray-600"><th class="p-2">Order ID</th><th class="p-2">Date</th><th class="p-2">Time</th><th class="p-2">Name</th><th class="p-2">Phone</th><th class="p-2">Address</th><th class="p-2">Items</th><th class="p-2">Total</th></tr></thead>
+            <tbody id="ordersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD TAB -->
+    <section id="tab-dashboard" class="hidden">
+      <div class="bg-white rounded-xl shadow p-4">
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <button class="px-3 py-2 bg-gray-200 rounded" data-range="today">আজ</button>
+          <button class="px-3 py-2 bg-gray-200 rounded" data-range="7d">৭ দিন</button>
+          <button class="px-3 py-2 bg-gray-200 rounded" data-range="30d">৩০ দিন</button>
+          <input type="date" id="dashFrom" class="border px-3 py-2 rounded" />
+          <input type="date" id="dashTo" class="border px-3 py-2 rounded" />
+          <button id="btnDashLoad" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">📊 দেখুন</button>
+        </div>
+        <div id="dashCards" class="grid md:grid-cols-4 gap-3"></div>
+        <div id="topItems" class="mt-4"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Simple modals for CRUD -->
+  <dialog id="dlgCat" class="rounded-xl p-0 w-[420px]">
+    <form method="dialog" class="p-4 space-y-3">
+      <h3 class="font-bold">ক্যাটাগরি</h3>
+      <input id="cat_id" class="w-full border px-3 py-2 rounded" placeholder="ID (unique)" />
+      <input id="cat_bn" class="w-full border px-3 py-2 rounded" placeholder="নাম (বাংলা)" />
+      <input id="cat_en" class="w-full border px-3 py-2 rounded" placeholder="নাম (English)" />
+      <input id="cat_order" type="number" class="w-full border px-3 py-2 rounded" placeholder="অর্ডার" />
+      <label class="flex items-center gap-2"><input type="checkbox" id="cat_active" checked /> একটিভ</label>
+      <div class="flex justify-end gap-2 pt-2">
+        <button class="px-3 py-2 bg-gray-200 rounded" value="cancel">বাতিল</button>
+        <button class="px-3 py-2 bg-green-600 text-white rounded" value="ok">সেভ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgItem" class="rounded-xl p-0 w-[520px]">
+    <form method="dialog" class="p-4 space-y-3">
+      <h3 class="font-bold">আইটেম</h3>
+      <input id="item_id" class="w-full border px-3 py-2 rounded" placeholder="ID (unique)" />
+      <select id="item_cat" class="w-full border px-3 py-2 rounded"></select>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="item_bn" class="border px-3 py-2 rounded" placeholder="নাম (বাংলা)" />
+        <input id="item_en" class="border px-3 py-2 rounded" placeholder="নাম (English)" />
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <input id="item_price" type="number" class="border px-3 py-2 rounded" placeholder="দাম" />
+        <input id="item_order" type="number" class="border px-3 py-2 rounded" placeholder="অর্ডার" />
+        <label class="flex items-center gap-2"><input type="checkbox" id="item_special" /> স্পেশাল</label>
+      </div>
+      <input id="item_img" class="w-full border px-3 py-2 rounded" placeholder="ইমেজ URL" />
+      <label class="flex items-center gap-2"><input type="checkbox" id="item_active" checked /> একটিভ</label>
+      <div class="flex justify-end gap-2 pt-2">
+        <button class="px-3 py-2 bg-gray-200 rounded" value="cancel">বাতিল</button>
+        <button class="px-3 py-2 bg-green-600 text-white rounded" value="ok">সেভ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const els = {
+      token: document.getElementById('adminToken'),
+      saveToken: document.getElementById('saveToken'),
+      webAppUrl: document.getElementById('webAppUrl'),
+      tabs: document.querySelectorAll('.tab-btn'),
+      sections: {
+        settings: document.getElementById('tab-settings'),
+        categories: document.getElementById('tab-categories'),
+        items: document.getElementById('tab-items'),
+        orders: document.getElementById('tab-orders'),
+        dashboard: document.getElementById('tab-dashboard')
+      },
+      // settings
+      cfg: {
+        name: document.getElementById('cfg_name'), motto: document.getElementById('cfg_motto'), logo: document.getElementById('cfg_logo'), address: document.getElementById('cfg_address'),
+        currency: document.getElementById('cfg_currency'), delivery: document.getElementById('cfg_delivery'), phone: document.getElementById('cfg_phone'),
+        ogTitle: document.getElementById('cfg_og_title'), ogDesc: document.getElementById('cfg_og_desc'), ogImage: document.getElementById('cfg_og_image'),
+        btnSave: document.getElementById('btnSaveConfig'), btnSaveOG: document.getElementById('btnSaveOG'), btnCopyMeta: document.getElementById('btnCopyMeta'), metaSnippet: document.getElementById('metaSnippet')
+      },
+      // categories
+      catTbody: document.getElementById('catTbody'), btnAddCat: document.getElementById('btnAddCat'),
+      // items
+      itemTbody: document.getElementById('itemTbody'), btnAddItem: document.getElementById('btnAddItem'),
+      // orders
+      ordFrom: document.getElementById('ordFrom'), ordTo: document.getElementById('ordTo'), btnLoadOrders: document.getElementById('btnLoadOrders'), ordersTbody: document.getElementById('ordersTbody'),
+      // dashboard
+      btnDashLoad: document.getElementById('btnDashLoad'), dashFrom: document.getElementById('dashFrom'), dashTo: document.getElementById('dashTo'), dashCards: document.getElementById('dashCards'), topItems: document.getElementById('topItems')
+    };
+
+    const dlgCat = document.getElementById('dlgCat');
+    const dlgItem = document.getElementById('dlgItem');
+
+    const store = { token:'', baseUrl:'', config:{}, categories:[], items:[] };
+
+    function toast(msg, type='info'){
+      const t = document.createElement('div');
+      t.className = `fixed top-4 right-4 px-4 py-2 rounded text-white z-[200] ${type==='error'?'bg-red-500': type==='success'?'bg-green-600':'bg-gray-800'}`;
+      t.textContent = msg; document.body.appendChild(t); setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(), 300); }, 2500);
+    }
+
+    function setActiveTab(name){ els.tabs.forEach(b=>{ b.classList.toggle('active', b.dataset.tab===name); }); Object.entries(els.sections).forEach(([k,sec])=>{ sec.classList.toggle('hidden', k!==name); }); }
+
+    async function getJSON(u){ const r = await fetch(u, {cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+    async function post(body){ const r = await fetch(store.baseUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+
+    // Load initial
+    function loadPrefs(){ store.token = sessionStorage.getItem('ADMIN_TOKEN')||''; store.baseUrl = localStorage.getItem('WEBAPP_URL')||''; els.token.value = store.token; els.webAppUrl.value = store.baseUrl; }
+    function savePrefs(){ store.token = els.token.value.trim(); store.baseUrl = els.webAppUrl.value.trim(); sessionStorage.setItem('ADMIN_TOKEN', store.token); localStorage.setItem('WEBAPP_URL', store.baseUrl); toast('Saved.'); }
+
+    async function refreshAll(){ if(!store.baseUrl){ toast('Set Web App URL first','error'); return; } const [cfg, menu] = await Promise.all([ getJSON(`${store.baseUrl}?action=getConfig`), getJSON(`${store.baseUrl}?action=getMenu`) ]); store.config = cfg; store.categories = menu.categories || []; store.items = menu.items || []; renderSettings(); renderCats(); renderItems(); }
+
+    // Settings
+    function renderSettings(){ const c = store.config || {}; els.cfg.name.value = c.name||''; els.cfg.motto.value = c.motto||''; els.cfg.logo.value = c.logo||''; els.cfg.address.value = c.address||''; els.cfg.currency.value = c.currency||'৳'; els.cfg.delivery.value = c.delivery_charge ?? 50; els.cfg.phone.value = c.whatsapp || ''; els.cfg.ogTitle.value = c.og_title||''; els.cfg.ogDesc.value = c.og_desc||''; els.cfg.ogImage.value = c.og_image||''; updateMetaSnippet(); }
+
+    function updateMetaSnippet(){ const t = els.cfg.ogTitle.value||'NOA Cafe & Restaurant'; const d = els.cfg.ogDesc.value||'সুস্বাদু খাবারের ঠিকানা'; const i = els.cfg.ogImage.value||'https://placehold.co/1200x630/orange/white?text=NOA%20Cafe'; els.cfg.metaSnippet.textContent = `<meta property="og:title" content="${t}">\n<meta property="og:description" content="${d}">\n<meta property="og:image" content="${i}">\n<meta name="twitter:card" content="summary_large_image">`; }
+
+    async function saveConfig(){ if(!store.baseUrl){ toast('Web App URL দিন','error'); return;} const body = { action:'setConfig', token: store.token, config: { name: els.cfg.name.value.trim(), motto: els.cfg.motto.value.trim(), logo: els.cfg.logo.value.trim(), address: els.cfg.address.value.trim(), currency: els.cfg.currency.value.trim()||'৳', delivery_charge: Number(els.cfg.delivery.value||50), whatsapp: els.cfg.phone.value.trim(), og_title: els.cfg.ogTitle.value.trim(), og_desc: els.cfg.ogDesc.value.trim(), og_image: els.cfg.ogImage.value.trim() } }; const res = await post(body); if(res.status==='ok'){ toast('সেটিংস সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
+
+    // Categories
+    function renderCats(){ const tbody = els.catTbody; tbody.innerHTML = store.categories.sort((a,b)=>(+a.order||0)-(+b.order||0)).map((c,idx)=>`<tr><td class="p-2">${idx+1}</td><td class="p-2 font-bold">${c.nameBn||''}</td><td class="p-2">${c.nameEn||''}</td><td class="p-2">${c.order||0}</td><td class="p-2">${String(c.isActive)!=='false'?'✅':'❌'}</td><td class="p-2"><button class="px-2 py-1 bg-gray-200 rounded" data-edit="${c.id}">এডিট</button> <button class="px-2 py-1 bg-red-200 text-red-700 rounded" data-del="${c.id}">ডিলিট</button></td></tr>`).join(''); }
+
+    function openCatDialog(cat){ dlgCat.showModal(); document.getElementById('cat_id').value = cat?.id||''; document.getElementById('cat_bn').value = cat?.nameBn||''; document.getElementById('cat_en').value = cat?.nameEn||''; document.getElementById('cat_order').value = cat?.order||0; document.getElementById('cat_active').checked = String(cat?.isActive)!=='false'; }
+
+    async function saveCatFromDialog(ev){ if(ev.target.value!=='ok') return; const id = document.getElementById('cat_id').value.trim(); const nameBn = document.getElementById('cat_bn').value.trim(); const nameEn = document.getElementById('cat_en').value.trim(); const order = Number(document.getElementById('cat_order').value||0); const isActive = document.getElementById('cat_active').checked; const res = await post({ action:'upsertCategory', token: store.token, category:{ id, nameBn, nameEn, order, isActive } }); if(res.status==='ok'){ toast('ক্যাটাগরি সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
+
+    async function deleteCat(id){ if(!confirm('ডিলিট করবেন?')) return; const res = await post({ action:'deleteCategory', token: store.token, id }); if(res.status==='ok'){ toast('ডিলিট হয়েছে','success'); await refreshAll(); } else toast('ডিলিট হয়নি','error'); }
+
+    // Items
+    function renderItems(){ const tbody = els.itemTbody; const catMap = Object.fromEntries(store.categories.map(c=>[c.id, c.nameBn||c.nameEn||c.id])); const rows = store.items.sort((a,b)=>(+a.order||0)-(+b.order||0)).map(it=>`<tr><td class="p-2">${catMap[it.catId]||it.catId}</td><td class="p-2 font-bold">${it.nameBn||''}</td><td class="p-2">${it.nameEn||''}</td><td class="p-2">${it.price||0}</td><td class="p-2">${it.order||0}</td><td class="p-2">${String(it.special)==='true'?'✨':''}</td><td class="p-2">${String(it.isActive)!=='false'?'✅':'❌'}</td><td class="p-2"><button class="px-2 py-1 bg-gray-200 rounded" data-edit-item="${it.id}">এডিট</button> <button class="px-2 py-1 bg-red-200 text-red-700 rounded" data-del-item="${it.id}">ডিলিট</button></td></tr>`);
+      tbody.innerHTML = rows.join(''); }
+
+    function openItemDialog(it){ dlgItem.showModal(); const sel = document.getElementById('item_cat'); sel.innerHTML = store.categories.map(c=>`<option value="${c.id}">${c.nameBn||c.nameEn||c.id}</option>`).join(''); document.getElementById('item_id').value = it?.id||''; document.getElementById('item_cat').value = it?.catId|| (store.categories[0]?.id||''); document.getElementById('item_bn').value = it?.nameBn||''; document.getElementById('item_en').value = it?.nameEn||''; document.getElementById('item_price').value = it?.price||0; document.getElementById('item_order').value = it?.order||0; document.getElementById('item_special').checked = String(it?.special)==='true'; document.getElementById('item_img').value = it?.imageUrl||''; document.getElementById('item_active').checked = String(it?.isActive)!=='false'; }
+
+    async function saveItemFromDialog(ev){ if(ev.target.value!=='ok') return; const payload = { id: document.getElementById('item_id').value.trim(), catId: document.getElementById('item_cat').value, nameBn: document.getElementById('item_bn').value.trim(), nameEn: document.getElementById('item_en').value.trim(), price: Number(document.getElementById('item_price').value||0), order: Number(document.getElementById('item_order').value||0), special: document.getElementById('item_special').checked, imageUrl: document.getElementById('item_img').value.trim(), isActive: document.getElementById('item_active').checked };
+      const res = await post({ action:'upsertItem', token: store.token, item: payload }); if(res.status==='ok'){ toast('আইটেম সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
+
+    async function deleteItem(id){ if(!confirm('ডিলিট করবেন?')) return; const res = await post({ action:'deleteItem', token: store.token, id }); if(res.status==='ok'){ toast('ডিলিট হয়েছে','success'); await refreshAll(); } else toast('ডিলিট হয়নি','error'); }
+
+    // Orders
+    async function loadOrders(){ const q = new URLSearchParams({ action:'listOrders', from: els.ordFrom.value||'', to: els.ordTo.value||'' }); const data = await getJSON(`${store.baseUrl}?${q.toString()}`); const rows = (data.orders||[]).map(o=>`<tr><td class="p-2 font-bold">${o.OrderId}</td><td class="p-2">${o.Date}</td><td class="p-2">${o.Time}</td><td class="p-2">${o.CustomerName}</td><td class="p-2">${o.Mobile}</td><td class="p-2">${o.Address}</td><td class="p-2">${o.ItemsText||''}</td><td class="p-2">${o.Total}</td></tr>`).join(''); els.ordersTbody.innerHTML = rows; }
+
+    // Dashboard
+    async function loadDash(range){ let from=els.dashFrom.value, to=els.dashTo.value; const today = new Date(); const fmt = d=> d.toISOString().slice(0,10); if(range==='today'){ from=fmt(today); to=fmt(today);} if(range==='7d'){ const s=new Date(today); s.setDate(s.getDate()-6); from=fmt(s); to=fmt(today);} if(range==='30d'){ const s=new Date(today); s.setDate(s.getDate()-29); from=fmt(s); to=fmt(today);} const q = new URLSearchParams({ action:'summary', from: from||'', to: to||'' }); const data = await getJSON(`${store.baseUrl}?${q.toString()}`); const s = data.summary||{orders:0,revenue:0,uniqueItems:0,clicks:0,topItems:[]}; els.dashCards.innerHTML = `<div class="p-4 rounded bg-orange-50 border">🧾 মোট অর্ডার: <b>${s.orders||0}</b></div><div class="p-4 rounded bg-orange-50 border">💵 মোট বিক্রি: <b>${s.revenue||0}</b></div><div class="p-4 rounded bg-orange-50 border">👆 ক্লিক: <b>${s.clicks||0}</b></div><div class="p-4 rounded bg-orange-50 border">🍽️ আইটেম (ইউনিক): <b>${s.uniqueItems||0}</b></div>`; els.topItems.innerHTML = `<h3 class="font-bold mt-4 mb-2">🔥 শীর্ষ আইটেম</h3>` + `<ul class="list-disc pl-6 text-sm">${(s.topItems||[]).map(t=>`<li>${t.nameBn||t.itemId} — অর্ডার: ${t.orders}, পরিমাণ: ${t.qty}, বিক্রি: ${t.amount}</li>`).join('')}</ul>`; }
+
+    // Events
+    els.saveToken.addEventListener('click', savePrefs);
+    els.tabs.forEach(b=> b.addEventListener('click', ()=> setActiveTab(b.dataset.tab)) );
+    els.cfg.btnSave.addEventListener('click', saveConfig);
+    els.cfg.btnSaveOG.addEventListener('click', saveConfig);
+    els.cfg.btnCopyMeta.addEventListener('click', ()=>{ updateMetaSnippet(); navigator.clipboard.writeText(els.cfg.metaSnippet.textContent); toast('কপি হয়েছে','success'); });
+
+    els.btnAddCat.addEventListener('click', ()=> openCatDialog(null));
+    dlgCat.addEventListener('close', saveCatFromDialog);
+    els.catTbody.addEventListener('click', (e)=>{ const id = e.target.dataset.edit; if(id){ const cat = store.categories.find(c=>c.id==id); openCatDialog(cat); } const did = e.target.dataset.del; if(did) deleteCat(did); });
+
+    els.btnAddItem.addEventListener('click', ()=> openItemDialog(null));
+    dlgItem.addEventListener('close', saveItemFromDialog);
+    els.itemTbody.addEventListener('click', (e)=>{ const id = e.target.dataset.editItem; if(id){ const it = store.items.find(x=>x.id==id); openItemDialog(it); } const did = e.target.dataset.delItem; if(did) deleteItem(did); });
+
+    els.btnLoadOrders.addEventListener('click', loadOrders);
+    document.querySelectorAll('[data-range]').forEach(b=> b.addEventListener('click', ()=> loadDash(b.dataset.range)) );
+    els.btnDashLoad.addEventListener('click', ()=> loadDash());
+
+    // Init
+    loadPrefs(); setActiveTab('settings'); if(store.baseUrl) refreshAll();
+  </script>
+</body>
+</html>
