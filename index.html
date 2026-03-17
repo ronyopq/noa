@@ -156,8 +156,8 @@
   <script>
     // ====== CONFIG (Set your Web App URL & WhatsApp number) ======
     const CONFIG = {
-      SHEETS_WEBAPP_URL: "", // e.g., https://script.google.com/macros/s/XXXX/exec
-      WHATSAPP_NUMBER: "",   // optional: +8801XXXXXXXXX; if blank, will open chooser
+      SHEETS_WEBAPP_URL: localStorage.getItem('WEBAPP_URL') || "", // reads URL saved by admin panel
+      WHATSAPP_NUMBER: "",   // fallback; prefer siteConfig.whatsapp loaded from backend
       DELIVERY_CHARGE: 50
     };
 
@@ -380,7 +380,7 @@
       lines.push(`🏪 ${siteConfig.name||'NOA Cafe & Restaurant'}`);
       lines.push(`${siteConfig.address||''}`);
       const msg = encodeURIComponent(lines.join('\n'));
-      const num = (CONFIG.WHATSAPP_NUMBER||'').replace(/\s|\+|-/g,'');
+      const num = (siteConfig.whatsapp || CONFIG.WHATSAPP_NUMBER || '').replace(/\s|\+|-/g,'');
       const waUrl = num? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`;
       window.open(waUrl, '_blank');
 
