@@ -66,6 +66,13 @@ Open `admin.html` in a browser (or host alongside index.html on GitHub Pages):
 
 **OG/Twitter meta control:** Save desired values in Settings. Click **"মেটা ট্যাগ কপি"** to copy tags and paste into `<head>` of `index.html`. (Static meta is required for rich social sharing on GitHub Pages.)
 
+### Standalone mode (no backend URL)
+- Leave **Web App URL** empty in `admin.html`.
+- The admin panel will save Config/Categories/Items locally in browser `localStorage` (`NOA_STANDALONE_DATA`).
+- `index.html` will automatically load the same local data if no Web App URL is set.
+- Orders and add-to-cart events are also stored locally and shown in Admin Orders/Dashboard.
+- This is ideal for a quick standalone deployment (e.g., Vercel) without Google Sheets.
+
 ---
 ## 4) Deploy on GitHub Pages
 
