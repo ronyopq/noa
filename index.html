@@ -162,6 +162,7 @@
     };
 
     const defaultImage = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=200&fit=crop';
+    const STANDALONE_KEY = 'NOA_STANDALONE_DATA';
     let cart = {};
     let siteConfig = { name:'NOA Cafe & Restaurant', motto:'সুস্বাদু খাবারের ঠিকানা', logo:'', address:'📍 দত্তবাড়ির মোড়, মাইজদি, নোয়াখালী', currency:'৳', delivery_charge:50 };
     let categories = []; // {id,nameBn,nameEn,order,isActive}
@@ -179,9 +180,56 @@
 
     async function fetchJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
     async function postJSON(body){ const r = await fetch(CONFIG.SHEETS_WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+    function getDefaultStandaloneData(){
+      return {
+        config: {
+          name:'NOA Cafe & Restaurant',
+          motto:'সুস্বাদু খাবারের ঠিকানা',
+          logo:'',
+          address:'📍 দত্তবাড়ির মোড়, মাইজদি, নোয়াখালী',
+          currency:'৳',
+          delivery_charge:50,
+          whatsapp:'',
+          og_title:'NOA Cafe & Restaurant',
+          og_desc:'সুস্বাদু খাবারের ঠিকানা',
+          og_image:'https://placehold.co/1200x630/orange/white?text=NOA%20Cafe'
+        },
+        categories: [{id:'static-tea', nameBn:'চা', nameEn:'Tea', order:1, isActive:true}],
+        items: [{id:'t1', catId:'static-tea', nameBn:'মালাই চা', nameEn:'Malai Chai', price:25, order:1, special:true, imageUrl:defaultImage, isActive:true}],
+        orders: [],
+        events: []
+      };
+    }
+    function getStandaloneData(){
+      try{
+        const raw = localStorage.getItem(STANDALONE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return {
+          ...getDefaultStandaloneData(),
+          ...parsed,
+          config: { ...getDefaultStandaloneData().config, ...(parsed?.config||{}) },
+          categories: Array.isArray(parsed?.categories) ? parsed.categories : getDefaultStandaloneData().categories,
+          items: Array.isArray(parsed?.items) ? parsed.items : getDefaultStandaloneData().items,
+          orders: Array.isArray(parsed?.orders) ? parsed.orders : [],
+          events: Array.isArray(parsed?.events) ? parsed.events : []
+        };
+      }catch{
+        return getDefaultStandaloneData();
+      }
+    }
+    function saveStandaloneData(data){ localStorage.setItem(STANDALONE_KEY, JSON.stringify(data)); }
 
     async function loadData(){
-      if(!CONFIG.SHEETS_WEBAPP_URL){ console.warn('SHEETS_WEBAPP_URL not set; using fallback static menu.'); renderStaticMenu(); finishLoader(); return; }
+      if(!CONFIG.SHEETS_WEBAPP_URL){
+        const data = getStandaloneData();
+        siteConfig = data.config || siteConfig;
+        categories = data.categories || [];
+        items = data.items || [];
+        applySiteConfig();
+        renderDynamicMenu();
+        finishLoader();
+        return;
+      }
       try{
         const [cfg, menu] = await Promise.all([
           fetchJSON(`${CONFIG.SHEETS_WEBAPP_URL}?action=getConfig`),
@@ -276,7 +324,13 @@
 
     async function logEvent(eventType, extra={}){
       try{
-        if(!CONFIG.SHEETS_WEBAPP_URL) return;
+        if(!CONFIG.SHEETS_WEBAPP_URL){
+          const data = getStandaloneData();
+          data.events = data.events || [];
+          data.events.push({ eventType, sessionId, ts: new Date().toISOString(), ...extra });
+          saveStandaloneData(data);
+          return;
+        }
         await postJSON({ action:'logEvent', data:{ eventType, sessionId, ts: new Date().toISOString(), ...extra } });
       }catch(e){ console.warn('logEvent failed', e); }
     }
@@ -357,6 +411,23 @@
         if(CONFIG.SHEETS_WEBAPP_URL){
           const res = await postJSON({ action:'createOrder', customer:{name, mobile:phone, address, deliveryTime}, items: payloadItems, subtotal, deliveryCharge: delivery, total });
           if(res && res.status==='ok' && res.orderId) orderId = res.orderId;
+        }else{
+          const data = getStandaloneData();
+          const now = new Date();
+          const date = now.toISOString().slice(0,10);
+          const time = now.toTimeString().slice(0,8);
+          data.orders = data.orders || [];
+          data.orders.unshift({
+            OrderId: orderId,
+            Date: date,
+            Time: time,
+            CustomerName: name,
+            Mobile: phone,
+            Address: address,
+            ItemsText: payloadItems.map(it=>`${it.nameBn} x${it.qty} = ${it.lineTotal}`).join(' | '),
+            Total: total
+          });
+          saveStandaloneData(data);
         }
       }catch(e){ console.warn('createOrder failed, using local ID', e); }
 
