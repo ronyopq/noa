@@ -268,9 +268,14 @@
         renderSettings(); renderCats(); renderItems();
         return;
       }
-      const [cfg, menu] = await Promise.all([ getJSON(`${store.baseUrl}?action=getConfig`), getJSON(`${store.baseUrl}?action=getMenu`) ]);
-      store.config = cfg; store.categories = menu.categories || []; store.items = menu.items || [];
-      renderSettings(); renderCats(); renderItems();
+      try{
+        const [cfg, menu] = await Promise.all([ getJSON(`${store.baseUrl}?action=getConfig`), getJSON(`${store.baseUrl}?action=getMenu`) ]);
+        store.config = cfg; store.categories = menu.categories || []; store.items = menu.items || [];
+        renderSettings(); renderCats(); renderItems();
+      }catch(e){
+        console.error(e);
+        toast(`Backend connect failed: ${e?.message || 'unknown error'}. Check Web App URL or use standalone mode.`, 'error');
+      }
     }
 
     // Settings

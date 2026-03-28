@@ -154,9 +154,13 @@
   </div>
 
   <script>
+    function readStorageSafe(key){
+      try{ return localStorage.getItem(key) || ''; }catch(e){ console.warn('localStorage access failed:', e); return ''; }
+    }
+
     // ====== CONFIG (Set your Web App URL & WhatsApp number) ======
     const CONFIG = {
-      SHEETS_WEBAPP_URL: localStorage.getItem('WEBAPP_URL') || "", // reads URL saved by admin panel
+      SHEETS_WEBAPP_URL: readStorageSafe('WEBAPP_URL'), // reads URL saved by admin panel
       WHATSAPP_NUMBER: "",   // fallback; prefer siteConfig.whatsapp loaded from backend
       DELIVERY_CHARGE: 50
     };
