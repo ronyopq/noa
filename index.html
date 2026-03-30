@@ -180,8 +180,24 @@
     async function fetchJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
     async function postJSON(body){ const r = await fetch(CONFIG.SHEETS_WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
 
+    function getStandaloneData(){ try{ const raw=localStorage.getItem('NOA_STANDALONE_DATA'); return raw?JSON.parse(raw):{config:{},categories:[],items:[],orders:[],events:[]}; }catch(e){ return {config:{},categories:[],items:[],orders:[],events:[]}; } }
+    function saveStandaloneData(data){ localStorage.setItem('NOA_STANDALONE_DATA', JSON.stringify(data)); }
+
     async function loadData(){
-      if(!CONFIG.SHEETS_WEBAPP_URL){ console.warn('SHEETS_WEBAPP_URL not set; using fallback static menu.'); renderStaticMenu(); finishLoader(); return; }
+      if(!CONFIG.SHEETS_WEBAPP_URL){
+        const data = getStandaloneData();
+        if(data.categories && data.categories.length){
+          siteConfig = data.config || siteConfig;
+          categories = data.categories;
+          items = data.items || [];
+          applySiteConfig();
+          renderDynamicMenu();
+        } else {
+          console.warn('SHEETS_WEBAPP_URL not set and no standalone data; using fallback static menu.');
+          renderStaticMenu();
+        }
+        finishLoader(); return;
+      }
       try{
         const [cfg, menu] = await Promise.all([
           fetchJSON(`${CONFIG.SHEETS_WEBAPP_URL}?action=getConfig`),
@@ -276,7 +292,13 @@
 
     async function logEvent(eventType, extra={}){
       try{
-        if(!CONFIG.SHEETS_WEBAPP_URL) return;
+        if(!CONFIG.SHEETS_WEBAPP_URL){
+          const data = getStandaloneData();
+          if(!data.events) data.events=[];
+          data.events.push({ eventType, sessionId, ts: new Date().toISOString(), ...extra });
+          saveStandaloneData(data);
+          return;
+        }
         await postJSON({ action:'logEvent', data:{ eventType, sessionId, ts: new Date().toISOString(), ...extra } });
       }catch(e){ console.warn('logEvent failed', e); }
     }
@@ -357,6 +379,12 @@
         if(CONFIG.SHEETS_WEBAPP_URL){
           const res = await postJSON({ action:'createOrder', customer:{name, mobile:phone, address, deliveryTime}, items: payloadItems, subtotal, deliveryCharge: delivery, total });
           if(res && res.status==='ok' && res.orderId) orderId = res.orderId;
+        } else {
+          const now = new Date();
+          const data = getStandaloneData();
+          if(!data.orders) data.orders=[];
+          data.orders.push({ OrderId: orderId, Date: now.toISOString().slice(0,10), Time: now.toTimeString().slice(0,8), CustomerName: name, Mobile: phone, Address: address, DeliveryTime: deliveryTime, ItemsText: payloadItems.map(i=>`${i.nameBn}×${i.qty}`).join(', '), Subtotal: subtotal, DeliveryCharge: delivery, Total: total });
+          saveStandaloneData(data);
         }
       }catch(e){ console.warn('createOrder failed, using local ID', e); }
 

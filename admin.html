@@ -199,6 +199,9 @@
 
     const store = { token:'', baseUrl:'', config:{}, categories:[], items:[] };
 
+    function getStandaloneData(){ try{ const raw=localStorage.getItem('NOA_STANDALONE_DATA'); return raw?JSON.parse(raw):{config:{},categories:[],items:[],orders:[],events:[]}; }catch(e){ return {config:{},categories:[],items:[],orders:[],events:[]}; } }
+    function saveStandaloneData(data){ localStorage.setItem('NOA_STANDALONE_DATA', JSON.stringify(data)); }
+
     function toast(msg, type='info'){
       const t = document.createElement('div');
       t.className = `fixed top-4 right-4 px-4 py-2 rounded text-white z-[200] ${type==='error'?'bg-red-500': type==='success'?'bg-green-600':'bg-gray-800'}`;
@@ -214,23 +217,36 @@
     function loadPrefs(){ store.token = sessionStorage.getItem('ADMIN_TOKEN')||''; store.baseUrl = localStorage.getItem('WEBAPP_URL')||''; els.token.value = store.token; els.webAppUrl.value = store.baseUrl; }
     function savePrefs(){ store.token = els.token.value.trim(); store.baseUrl = els.webAppUrl.value.trim(); sessionStorage.setItem('ADMIN_TOKEN', store.token); localStorage.setItem('WEBAPP_URL', store.baseUrl); toast('Saved.'); }
 
-    async function refreshAll(){ if(!store.baseUrl){ toast('Set Web App URL first','error'); return; } const [cfg, menu] = await Promise.all([ getJSON(`${store.baseUrl}?action=getConfig`), getJSON(`${store.baseUrl}?action=getMenu`) ]); store.config = cfg; store.categories = menu.categories || []; store.items = menu.items || []; renderSettings(); renderCats(); renderItems(); }
+    async function refreshAll(){
+      if(!store.baseUrl){
+        const data = getStandaloneData();
+        store.config = data.config || {}; store.categories = data.categories || []; store.items = data.items || [];
+        renderSettings(); renderCats(); renderItems(); return;
+      }
+      const [cfg, menu] = await Promise.all([ getJSON(`${store.baseUrl}?action=getConfig`), getJSON(`${store.baseUrl}?action=getMenu`) ]); store.config = cfg; store.categories = menu.categories || []; store.items = menu.items || []; renderSettings(); renderCats(); renderItems(); }
 
     // Settings
     function renderSettings(){ const c = store.config || {}; els.cfg.name.value = c.name||''; els.cfg.motto.value = c.motto||''; els.cfg.logo.value = c.logo||''; els.cfg.address.value = c.address||''; els.cfg.currency.value = c.currency||'৳'; els.cfg.delivery.value = c.delivery_charge ?? 50; els.cfg.phone.value = c.whatsapp || ''; els.cfg.ogTitle.value = c.og_title||''; els.cfg.ogDesc.value = c.og_desc||''; els.cfg.ogImage.value = c.og_image||''; updateMetaSnippet(); }
 
     function updateMetaSnippet(){ const t = els.cfg.ogTitle.value||'NOA Cafe & Restaurant'; const d = els.cfg.ogDesc.value||'সুস্বাদু খাবারের ঠিকানা'; const i = els.cfg.ogImage.value||'https://placehold.co/1200x630/orange/white?text=NOA%20Cafe'; els.cfg.metaSnippet.textContent = `<meta property="og:title" content="${t}">\n<meta property="og:description" content="${d}">\n<meta property="og:image" content="${i}">\n<meta name="twitter:card" content="summary_large_image">`; }
 
-    async function saveConfig(){ if(!store.baseUrl){ toast('Web App URL দিন','error'); return;} const body = { action:'setConfig', token: store.token, config: { name: els.cfg.name.value.trim(), motto: els.cfg.motto.value.trim(), logo: els.cfg.logo.value.trim(), address: els.cfg.address.value.trim(), currency: els.cfg.currency.value.trim()||'৳', delivery_charge: Number(els.cfg.delivery.value||50), whatsapp: els.cfg.phone.value.trim(), og_title: els.cfg.ogTitle.value.trim(), og_desc: els.cfg.ogDesc.value.trim(), og_image: els.cfg.ogImage.value.trim() } }; const res = await post(body); if(res.status==='ok'){ toast('সেটিংস সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
+    async function saveConfig(){
+      const cfg = { name: els.cfg.name.value.trim(), motto: els.cfg.motto.value.trim(), logo: els.cfg.logo.value.trim(), address: els.cfg.address.value.trim(), currency: els.cfg.currency.value.trim()||'৳', delivery_charge: Number(els.cfg.delivery.value||50), whatsapp: els.cfg.phone.value.trim(), og_title: els.cfg.ogTitle.value.trim(), og_desc: els.cfg.ogDesc.value.trim(), og_image: els.cfg.ogImage.value.trim() };
+      if(!store.baseUrl){ const d=getStandaloneData(); d.config=cfg; saveStandaloneData(d); toast('সেটিংস সেভ হয়েছে','success'); await refreshAll(); return; }
+      const res = await post({ action:'setConfig', token: store.token, config: cfg }); if(res.status==='ok'){ toast('সেটিংস সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
 
     // Categories
     function renderCats(){ const tbody = els.catTbody; tbody.innerHTML = store.categories.sort((a,b)=>(+a.order||0)-(+b.order||0)).map((c,idx)=>`<tr><td class="p-2">${idx+1}</td><td class="p-2 font-bold">${c.nameBn||''}</td><td class="p-2">${c.nameEn||''}</td><td class="p-2">${c.order||0}</td><td class="p-2">${String(c.isActive)!=='false'?'✅':'❌'}</td><td class="p-2"><button class="px-2 py-1 bg-gray-200 rounded" data-edit="${c.id}">এডিট</button> <button class="px-2 py-1 bg-red-200 text-red-700 rounded" data-del="${c.id}">ডিলিট</button></td></tr>`).join(''); }
 
     function openCatDialog(cat){ dlgCat.showModal(); document.getElementById('cat_id').value = cat?.id||''; document.getElementById('cat_bn').value = cat?.nameBn||''; document.getElementById('cat_en').value = cat?.nameEn||''; document.getElementById('cat_order').value = cat?.order||0; document.getElementById('cat_active').checked = String(cat?.isActive)!=='false'; }
 
-    async function saveCatFromDialog(ev){ if(ev.target.value!=='ok') return; const id = document.getElementById('cat_id').value.trim(); const nameBn = document.getElementById('cat_bn').value.trim(); const nameEn = document.getElementById('cat_en').value.trim(); const order = Number(document.getElementById('cat_order').value||0); const isActive = document.getElementById('cat_active').checked; const res = await post({ action:'upsertCategory', token: store.token, category:{ id, nameBn, nameEn, order, isActive } }); if(res.status==='ok'){ toast('ক্যাটাগরি সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
+    async function saveCatFromDialog(ev){ if(ev.target.value!=='ok') return; const id = document.getElementById('cat_id').value.trim(); const nameBn = document.getElementById('cat_bn').value.trim(); const nameEn = document.getElementById('cat_en').value.trim(); const order = Number(document.getElementById('cat_order').value||0); const isActive = document.getElementById('cat_active').checked;
+      if(!store.baseUrl){ const d=getStandaloneData(); const cats=d.categories||[]; const idx=cats.findIndex(c=>c.id===id); const cat={id,nameBn,nameEn,order,isActive}; if(idx>=0) cats[idx]=cat; else cats.push(cat); d.categories=cats; saveStandaloneData(d); toast('ক্যাটাগরি সেভ হয়েছে','success'); await refreshAll(); return; }
+      const res = await post({ action:'upsertCategory', token: store.token, category:{ id, nameBn, nameEn, order, isActive } }); if(res.status==='ok'){ toast('ক্যাটাগরি সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
 
-    async function deleteCat(id){ if(!confirm('ডিলিট করবেন?')) return; const res = await post({ action:'deleteCategory', token: store.token, id }); if(res.status==='ok'){ toast('ডিলিট হয়েছে','success'); await refreshAll(); } else toast('ডিলিট হয়নি','error'); }
+    async function deleteCat(id){ if(!confirm('ডিলিট করবেন?')) return;
+      if(!store.baseUrl){ const d=getStandaloneData(); d.categories=(d.categories||[]).filter(c=>c.id!==id); saveStandaloneData(d); toast('ডিলিট হয়েছে','success'); await refreshAll(); return; }
+      const res = await post({ action:'deleteCategory', token: store.token, id }); if(res.status==='ok'){ toast('ডিলিট হয়েছে','success'); await refreshAll(); } else toast('ডিলিট হয়নি','error'); }
 
     // Items
     function renderItems(){ const tbody = els.itemTbody; const catMap = Object.fromEntries(store.categories.map(c=>[c.id, c.nameBn||c.nameEn||c.id])); const rows = store.items.sort((a,b)=>(+a.order||0)-(+b.order||0)).map(it=>`<tr><td class="p-2">${catMap[it.catId]||it.catId}</td><td class="p-2 font-bold">${it.nameBn||''}</td><td class="p-2">${it.nameEn||''}</td><td class="p-2">${it.price||0}</td><td class="p-2">${it.order||0}</td><td class="p-2">${String(it.special)==='true'?'✨':''}</td><td class="p-2">${String(it.isActive)!=='false'?'✅':'❌'}</td><td class="p-2"><button class="px-2 py-1 bg-gray-200 rounded" data-edit-item="${it.id}">এডিট</button> <button class="px-2 py-1 bg-red-200 text-red-700 rounded" data-del-item="${it.id}">ডিলিট</button></td></tr>`);
@@ -239,12 +255,17 @@
     function openItemDialog(it){ dlgItem.showModal(); const sel = document.getElementById('item_cat'); sel.innerHTML = store.categories.map(c=>`<option value="${c.id}">${c.nameBn||c.nameEn||c.id}</option>`).join(''); document.getElementById('item_id').value = it?.id||''; document.getElementById('item_cat').value = it?.catId|| (store.categories[0]?.id||''); document.getElementById('item_bn').value = it?.nameBn||''; document.getElementById('item_en').value = it?.nameEn||''; document.getElementById('item_price').value = it?.price||0; document.getElementById('item_order').value = it?.order||0; document.getElementById('item_special').checked = String(it?.special)==='true'; document.getElementById('item_img').value = it?.imageUrl||''; document.getElementById('item_active').checked = String(it?.isActive)!=='false'; }
 
     async function saveItemFromDialog(ev){ if(ev.target.value!=='ok') return; const payload = { id: document.getElementById('item_id').value.trim(), catId: document.getElementById('item_cat').value, nameBn: document.getElementById('item_bn').value.trim(), nameEn: document.getElementById('item_en').value.trim(), price: Number(document.getElementById('item_price').value||0), order: Number(document.getElementById('item_order').value||0), special: document.getElementById('item_special').checked, imageUrl: document.getElementById('item_img').value.trim(), isActive: document.getElementById('item_active').checked };
+      if(!store.baseUrl){ const d=getStandaloneData(); const its=d.items||[]; const idx=its.findIndex(x=>x.id===payload.id); if(idx>=0) its[idx]=payload; else its.push(payload); d.items=its; saveStandaloneData(d); toast('আইটেম সেভ হয়েছে','success'); await refreshAll(); return; }
       const res = await post({ action:'upsertItem', token: store.token, item: payload }); if(res.status==='ok'){ toast('আইটেম সেভ হয়েছে','success'); await refreshAll(); } else toast('সেভ হয়নি','error'); }
 
-    async function deleteItem(id){ if(!confirm('ডিলিট করবেন?')) return; const res = await post({ action:'deleteItem', token: store.token, id }); if(res.status==='ok'){ toast('ডিলিট হয়েছে','success'); await refreshAll(); } else toast('ডিলিট হয়নি','error'); }
+    async function deleteItem(id){ if(!confirm('ডিলিট করবেন?')) return;
+      if(!store.baseUrl){ const d=getStandaloneData(); d.items=(d.items||[]).filter(x=>x.id!==id); saveStandaloneData(d); toast('ডিলিট হয়েছে','success'); await refreshAll(); return; }
+      const res = await post({ action:'deleteItem', token: store.token, id }); if(res.status==='ok'){ toast('ডিলিট হয়েছে','success'); await refreshAll(); } else toast('ডিলিট হয়নি','error'); }
 
     // Orders
-    async function loadOrders(){ const q = new URLSearchParams({ action:'listOrders', from: els.ordFrom.value||'', to: els.ordTo.value||'' }); const data = await getJSON(`${store.baseUrl}?${q.toString()}`); const rows = (data.orders||[]).map(o=>`<tr><td class="p-2 font-bold">${o.OrderId}</td><td class="p-2">${o.Date}</td><td class="p-2">${o.Time}</td><td class="p-2">${o.CustomerName}</td><td class="p-2">${o.Mobile}</td><td class="p-2">${o.Address}</td><td class="p-2">${o.ItemsText||''}</td><td class="p-2">${o.Total}</td></tr>`).join(''); els.ordersTbody.innerHTML = rows; }
+    async function loadOrders(){
+      if(!store.baseUrl){ const d=getStandaloneData(); const orders=d.orders||[]; const from=els.ordFrom.value; const to=els.ordTo.value; const filtered=orders.filter(o=>{ if(from && o.Date < from) return false; if(to && o.Date > to) return false; return true; }); els.ordersTbody.innerHTML = filtered.map(o=>`<tr><td class="p-2 font-bold">${o.OrderId}</td><td class="p-2">${o.Date}</td><td class="p-2">${o.Time}</td><td class="p-2">${o.CustomerName}</td><td class="p-2">${o.Mobile}</td><td class="p-2">${o.Address}</td><td class="p-2">${o.ItemsText||''}</td><td class="p-2">${o.Total}</td></tr>`).join(''); return; }
+      const q = new URLSearchParams({ action:'listOrders', from: els.ordFrom.value||'', to: els.ordTo.value||'' }); const data = await getJSON(`${store.baseUrl}?${q.toString()}`); const rows = (data.orders||[]).map(o=>`<tr><td class="p-2 font-bold">${o.OrderId}</td><td class="p-2">${o.Date}</td><td class="p-2">${o.Time}</td><td class="p-2">${o.CustomerName}</td><td class="p-2">${o.Mobile}</td><td class="p-2">${o.Address}</td><td class="p-2">${o.ItemsText||''}</td><td class="p-2">${o.Total}</td></tr>`).join(''); els.ordersTbody.innerHTML = rows; }
 
     // Dashboard
     async function loadDash(range){ let from=els.dashFrom.value, to=els.dashTo.value; const today = new Date(); const fmt = d=> d.toISOString().slice(0,10); if(range==='today'){ from=fmt(today); to=fmt(today);} if(range==='7d'){ const s=new Date(today); s.setDate(s.getDate()-6); from=fmt(s); to=fmt(today);} if(range==='30d'){ const s=new Date(today); s.setDate(s.getDate()-29); from=fmt(s); to=fmt(today);} const q = new URLSearchParams({ action:'summary', from: from||'', to: to||'' }); const data = await getJSON(`${store.baseUrl}?${q.toString()}`); const s = data.summary||{orders:0,revenue:0,uniqueItems:0,clicks:0,topItems:[]}; els.dashCards.innerHTML = `<div class="p-4 rounded bg-orange-50 border">🧾 মোট অর্ডার: <b>${s.orders||0}</b></div><div class="p-4 rounded bg-orange-50 border">💵 মোট বিক্রি: <b>${s.revenue||0}</b></div><div class="p-4 rounded bg-orange-50 border">👆 ক্লিক: <b>${s.clicks||0}</b></div><div class="p-4 rounded bg-orange-50 border">🍽️ আইটেম (ইউনিক): <b>${s.uniqueItems||0}</b></div>`; els.topItems.innerHTML = `<h3 class="font-bold mt-4 mb-2">🔥 শীর্ষ আইটেম</h3>` + `<ul class="list-disc pl-6 text-sm">${(s.topItems||[]).map(t=>`<li>${t.nameBn||t.itemId} — অর্ডার: ${t.orders}, পরিমাণ: ${t.qty}, বিক্রি: ${t.amount}</li>`).join('')}</ul>`; }
@@ -269,7 +290,7 @@
     els.btnDashLoad.addEventListener('click', ()=> loadDash());
 
     // Init
-    loadPrefs(); setActiveTab('settings'); if(store.baseUrl) refreshAll();
+    loadPrefs(); setActiveTab('settings'); refreshAll();
   </script>
 </body>
 </html>
