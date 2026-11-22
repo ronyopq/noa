@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.next-cache/
+coverage/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

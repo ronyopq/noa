@@ -1,0 +1,55 @@
+/* Global styles for the NOA restaurant app */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #f8f5f2;
+  color: #2b2d31;
+  font-family:
+    'Hind Siliguri',
+    'Noto Sans Bengali',
+    'Bangla Solveig',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+}
+
+body::selection {
+  background: rgba(230, 81, 0, 0.18);
+}
+
+html,
+body,
+#__next {
+  height: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
