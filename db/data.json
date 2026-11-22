@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "restaurants": [
+    {
+      "id": "RST-0001",
+      "code": "NOA",
+      "name": "NOA Cafe",
+      "slug": "noa-cafe",
+      "address": "North Road, Chittagong, Bangladesh",
+      "phone": "+8801700000421",
+      "currency": "BDT",
+      "timezone": "Asia/Dhaka",
+      "isPublished": true,
+      "createdAt": "2026-11-20T22:21:06.709Z",
+      "updatedAt": "2026-11-20T22:21:06.712Z"
+    }
+  ],
+  "branches": [],
+  "staffMemberships": [
+    {
+      "id": "SM-000001",
+      "restaurantId": "RST-0001",
+      "userId": "USR-000001",
+      "role": "owner",
+      "permissions": [
+        "menu:view",
+        "menu:edit",
+        "menu:publish",
+        "menu:manage",
+        "orders:view",
+        "orders:manage",
+        "pos:use",
+        "pos:discount",
+        "pos:counter",
+        "cash:close",
+        "cash:manage",
+        "reports:view",
+        "staff:manage",
+        "settings:manage",
+        "comments:view",
+        "comments:manage",
+        "games:manage"
+      ],
+      "status": "active",
+      "joinedAt": "2026-11-20T22:21:06.739Z",
+      "updatedAt": "2026-11-20T22:21:06.739Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "USR-000001",
+      "name": "Owner",
+      "phone": "+8801700000000",
+      "email": "owner@noacafe.local",
+      "passwordSalt": "03a54c1c022a019902061c8827e99663",
+      "passwordHash": "6a545e1814e54e5cf627ddc4e31dfb6a1154378ec0f40707c18f9e38556452ea",
+      "status": "active",
+      "role": "owner",
+      "restaurantId": "RST-0001",
+      "createdAt": "2026-11-20T22:21:06.738Z",
+      "updatedAt": "2026-11-20T22:21:06.738Z"
+    }
+  ],
+  "sessions": [],
+  "categories": [
+    {
+      "id": "CAT-0001",
+      "restaurantId": "RST-0001",
+      "name": "পানি ও জাতীয়",
+      "nameEn": "Local drinks",
+      "sortOrder": 1,
+      "isPublished": true,
+      "createdAt": "2026-11-20T22:21:06.713Z",
+      "updatedAt": "2026-11-20T22:21:06.713Z"
+    }
+  ],
+  "foods": [
+    {
+      "id": "FOOD-0001",
+      "restaurantId": "RST-0001",
+      "categoryId": "CAT-0001",
+      "name": "পানি",
+      "nameEn": "Water",
+      "description": "তরমুজ মৌসুমের সুপার ড্রিংক",
+      "price": 20,
+      "sortOrder": 1,
+      "isPublished": true,
+      "isAvailable": true,
+      "isSpecial": true,
+      "createdAt": "2026-11-20T22:21:06.713Z",
+      "updatedAt": "2026-11-20T22:21:06.713Z"
+    },
+    {
+      "id": "FOOD-0002",
+      "restaurantId": "RST-0001",
+      "categoryId": "CAT-0001",
+      "name": "মিষ্টি পানি",
+      "nameEn": "Sweet water",
+      "description": "তরমুজ মৌসুমের শান্তিময় পানি",
+      "price": 35,
+      "sortOrder": 2,
+      "isPublished": true,
+      "isAvailable": true,
+      "isSpecial": false,
+      "createdAt": "2026-11-20T22:21:06.713Z",
+      "updatedAt": "2026-11-20T22:21:06.713Z"
+    },
+    {
+      "id": "FOOD-0003",
+      "restaurantId": "RST-0001",
+      "categoryId": "CAT-0001",
+      "name": "দই",
+      "nameEn": "Buttermilk",
+      "description": "তরমুজ মৌসুমের মিষ্টিময়",
+      "price": 45,
+      "sortOrder": 3,
+      "isPublished": true,
+      "isAvailable": true,
+      "isSpecial": false,
+      "createdAt": "2026-11-20T22:21:06.713Z",
+      "updatedAt": "2026-11-20T22:21:06.713Z"
+    }
+  ],
+  "heroes": [
+    {
+      "id": "HERO-0001",
+      "restaurantId": "RST-0001",
+      "title": "আজকের স্পেশাল — ফালকাপাথে",
+      "subtitle": "আজ সন্ধ্যায় একসঙ্গে মিলিয়ে ফালকাপাথ গিয়ে আসতে এসো।",
+      "ctas": [
+        "মেনু দেখুন"
+      ],
+      "images": [],
+      "order": 1,
+      "isPublished": true,
+      "createdAt": "2026-11-20T22:21:06.714Z",
+      "updatedAt": "2026-11-20T22:21:06.714Z"
+    }
+  ],
+  "specials": [],
+  "orders": [],
+  "orderItems": [],
+  "bills": [],
+  "payments": [],
+  "games": [],
+  "gameRuns": [],
+  "comments": [],
+  "rewards": [],
+  "settings": [],
+  "counters": {
+    "id:RST": 1,
+    "id:CAT": 1,
+    "id:FOOD": 3,
+    "id:HERO": 1,
+    "id:USR": 1,
+    "id:SM": 1
+  }
+}
